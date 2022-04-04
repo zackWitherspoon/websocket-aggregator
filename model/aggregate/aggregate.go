@@ -23,7 +23,7 @@ func (agg *Aggregate) PrintAggregate() string {
 		timestamp.Hour(), timestamp.Minute(), timestamp.Second(), agg.OpenPrice, agg.ClosingPrice, agg.HighPrice, agg.LowPrice, agg.Volume)
 }
 
-func CalculateAggregate(trades []trade.Trade, symbol string, timeStamp int64) Aggregate {
+func CalculateAggregate(trades []trade.TradeRequest, symbol string, timeStamp int64) Aggregate {
 	agg := Aggregate{Symbol: symbol, Volume: 0, Timestamp: timeStamp}
 	var highestPrice float64
 	var lowestPrice float64

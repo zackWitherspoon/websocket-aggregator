@@ -7,12 +7,12 @@ import (
 )
 
 var _ = Describe("Aggregate Test", func() {
-	arrayOfTrades := []trade.Trade{
-		trade.Trade{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 123.45, Size: 21, Conditions: []int{2, 12}, Timestamp: 1536036818784},
-		trade.Trade{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 111.23, Size: 11, Conditions: []int{1, 4}, Timestamp: 1536036818782},
-		trade.Trade{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 145.10, Size: 4, Conditions: []int{4, 1}, Timestamp: 1536036818786},
-		trade.Trade{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 90.26, Size: 25, Conditions: []int{12, 1}, Timestamp: 1536036818794},
-		trade.Trade{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 110.12, Size: 9, Conditions: []int{1}, Timestamp: 1536036818799},
+	arrayOfTrades := []trade.TradeRequest{
+		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 123.45, Size: 21, Conditions: []int{2, 12}, Timestamp: 1536036818784},
+		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 111.23, Size: 11, Conditions: []int{1, 4}, Timestamp: 1536036818782},
+		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 145.10, Size: 4, Conditions: []int{4, 1}, Timestamp: 1536036818786},
+		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 90.26, Size: 25, Conditions: []int{12, 1}, Timestamp: 1536036818794},
+		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 110.12, Size: 9, Conditions: []int{1}, Timestamp: 1536036818799},
 	}
 	startTimestamp := int64(1536036818784)
 	Describe("Given a slice of Trades", func() {
@@ -27,14 +27,14 @@ var _ = Describe("Aggregate Test", func() {
 		Context("When that slice of Trades is empty", func() {
 			It("Should correctly return an empty Aggregate", func() {
 				expected := Aggregate{Symbol: "APPL", OpenPrice: 0, ClosingPrice: 0, HighPrice: 0, LowPrice: 0, Volume: 0, Timestamp: startTimestamp}
-				actual := CalculateAggregate([]trade.Trade{}, "APPL", startTimestamp)
+				actual := CalculateAggregate([]trade.TradeRequest{}, "APPL", startTimestamp)
 				Expect(actual).To(Equal(expected))
 			})
 		})
 		Context("When that slice of Trades is empty", func() {
 			It("Should correctly return an empty Aggregate", func() {
 				expected := Aggregate{Symbol: "APPL", OpenPrice: 0, ClosingPrice: 0, HighPrice: 0, LowPrice: 0, Volume: 0, Timestamp: startTimestamp}
-				actual := CalculateAggregate([]trade.Trade{}, "APPL", startTimestamp)
+				actual := CalculateAggregate([]trade.TradeRequest{}, "APPL", startTimestamp)
 				Expect(actual).To(Equal(expected))
 			})
 		})

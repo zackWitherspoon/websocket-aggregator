@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type Trade struct {
+type TradeRequest struct {
 	Event      string  `json:"ev"`
 	Symbol     string  `json:"sym"`
 	ExchangeId int     `json:"x"`
@@ -16,7 +16,7 @@ type Trade struct {
 	Timestamp  int64   `json:"t"`
 }
 
-func (trade *Trade) PrintTrade() {
+func (trade *TradeRequest) PrintTrade() {
 	conditionString := "["
 	for i, v := range trade.Conditions {
 		if i != len(trade.Conditions)-1 {
