@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"polygon-websocket-aggregator/service"
+	"polygon-websocket-aggregator/application"
 )
 
 const APIKEY = ""
@@ -11,5 +11,5 @@ const CHANNELS = "T.SPY,Q.SPY"
 func main() {
 	//Get Ticker
 	ticker := "APPL"
-	service.Start(ticker, logrus.DebugLevel)
+	application.Start(ticker, logrus.DebugLevel)
 }

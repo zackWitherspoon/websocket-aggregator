@@ -39,14 +39,4 @@ var _ = Describe("Aggregate Test", func() {
 			})
 		})
 	})
-	Describe("Given an Aggregate", func() {
-		Context("When that Aggregate needs to be printed", func() {
-			It("Should correctly match the expected aggregate", func() {
-				agg := Aggregate{Symbol: "APPL", OpenPrice: 123.45, ClosingPrice: 145.22, HighPrice: 160.87, LowPrice: 111.23, Volume: 210, Timestamp: 1649022180}
-				expected := "17:43:00 - open: $123.45, close: $145.22, high: $160.87, low: $111.23, volume: 210\n"
-				actual := agg.PrintAggregate()
-				Expect(actual).To(Equal(expected))
-			})
-		})
-	})
 })
