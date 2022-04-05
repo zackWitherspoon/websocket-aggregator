@@ -1,17 +1,21 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"log"
+	"polygon-websocket-aggregator/model/aggregate"
+	"polygon-websocket-aggregator/model/trade"
 	"polygon-websocket-aggregator/model/web_socket"
+	"sync"
 	"time"
 )
 
 const (
-	webSocketUrl = "wss://delayed.polygon.io/stocks"
-	APIKey       = ""
+	webSocketUrl  = "wss://delayed.polygon.io/stocks"
+	APIKey        = "JncA2_tG82oqnPqGQHyMj2BW_h2jCoQl"
+	aggregateTime = 5
 )
 
 type WebSocketClient interface {
@@ -21,7 +25,7 @@ type WebSocketClient interface {
 type TradeWebSocket struct{}
 
 var authenticationMessage = []byte(fmt.Sprintf("{\"action\":\"auth\",\"params\":\"%s\"}", APIKey))
-var subscribeMessage = "{\"action\":\"subscribe\",\"params\":\"T.%s\"}"
+var subscribeMessage = "{\"action\":\"subscribe\",\"params\":\"T.TSLA\"}"
 
 func Start(tickerName string, level logrus.Level) {
 	logrus.SetLevel(level)
@@ -31,36 +35,66 @@ func Start(tickerName string, level logrus.Level) {
 		logrus.Fatalf("Websocket connection to the websocket at URL: %s has failed. The following error was returned: %s\n", webSocketUrl, err.Error())
 	}
 	defer conn.Close()
-
-	done := make(chan struct{})
+	//startTime := time.Now().Unix()
+	ticker := time.NewTicker(aggregateTime * time.Second)
+	defer ticker.Stop()
+	trades := make(chan []byte, 10000)
+	tradesQueue := make(chan []trade.TradeRequest, 10000)
+	//aggMap := make(map[int64]*aggregate.Aggregate)
+	var tradesList []trade.TradeRequest
+	lock := sync.Mutex{}
 
 	go func() {
-		defer close(done)
 		for {
-			_, message, err := conn.ReadMessage()
-			if err != nil {
-				log.Println("read:", err)
-				return
+			select {
+			case t := <-tradesQueue:
+				for i := range t {
+					if !(t[i].Timestamp < time.Now().Unix()-time.Hour.Milliseconds()) {
+						//println("Aquiring Lock for Update")
+						lock.Lock()
+						tradesList = append(tradesList, t[i])
+						lock.Unlock()
+						//println("Releasing Lock for Update")
+					}
+					//t[i].PrintTrade()
+				}
+			case t := <-ticker.C:
+				//println("Aquiring Lock for Timer")
+				lock.Lock()
+				//agg := aggregate.Aggregate{}
+				agg := aggregate.CalculateAggregate(tradesList, tickerName, t.Unix()-(time.Second*aggregateTime).Milliseconds())
+				//println("~~~~~~~~~~~~~~~ABOUT TO PRINT AGGREGATE!")
+				agg.PrintAggregate()
+				println("Trades Length:", len(trades))
+				println("TradesQueue Length:", len(trades))
+				tradesList = []trade.TradeRequest{}
+				lock.Unlock()
+				//println("Releasing Lock for Timer")
 			}
-			log.Printf("recv: %s", message)
+
 		}
 	}()
 
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-done:
-			return
-		case t := <-ticker.C:
-			fmt.Printf("Tick at: %d", t)
-			_, p, err := conn.ReadMessage()
-			if err != nil {
-				fmt.Printf("%v", err)
+	go func() {
+		for msgBytes := range trades {
+			var m []trade.TradeRequest
+			if err := json.Unmarshal(msgBytes, &m); err != nil {
+				panic(err)
 			}
-			println(string(p))
+			tradesQueue <- m
+			//logrus.Info("Message Bytes: ", msgBytes)
+			// Send through Channel or add to slice.... you decide
 		}
+	}()
+	for {
+
+		var msg []byte
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			//TODO: Fix
+			panic(err)
+		}
+		trades <- msg
 	}
 }
 

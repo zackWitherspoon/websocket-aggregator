@@ -4,23 +4,55 @@ import (
 	"fmt"
 	"math"
 	"polygon-websocket-aggregator/model/trade"
+	"sync"
 	"time"
 )
 
 type Aggregate struct {
-	Symbol       string  `json:"sym"`
-	OpenPrice    float64 `json:""`
-	ClosingPrice float64 `json:""`
-	HighPrice    float64 `json:""`
-	LowPrice     float64 `json:""`
-	Volume       int     `json:"v"`
-	Timestamp    int64   `json:""`
+	Symbol                string  `json:"sym"`
+	OpenPrice             float64 `json:""`
+	OpenPriceTimestamp    int64
+	ClosingPrice          float64 `json:""`
+	ClosingPriceTimestamp int64
+	HighPrice             float64 `json:""`
+	LowPrice              float64 `json:""`
+	Volume                int     `json:"v"`
+	Timestamp             int64   `json:""`
+	MutexLock             *sync.Mutex
 }
 
-func (agg *Aggregate) PrintAggregate() string {
+func (agg *Aggregate) PrintAggregate() {
 	timestamp := time.Unix(agg.Timestamp, 0)
-	return fmt.Sprintf("%d:%d:%.2d - open: $%.2f, close: $%.2f, high: $%.2f, low: $%.2f, volume: %d\n",
+	fmt.Printf("%d:%d:%.2d - open: $%.2f, close: $%.2f, high: $%.2f, low: $%.2f, volume: %d\n",
 		timestamp.Hour(), timestamp.Minute(), timestamp.Second(), agg.OpenPrice, agg.ClosingPrice, agg.HighPrice, agg.LowPrice, agg.Volume)
+}
+
+func (agg *Aggregate) UpdateAggregate(trade trade.TradeRequest, symbol string, timeStamp int64) {
+	agg.MutexLock.Lock()
+	defer agg.MutexLock.Unlock()
+	if agg.Symbol == "" {
+		agg = &Aggregate{Symbol: symbol, OpenPrice: trade.Price, OpenPriceTimestamp: trade.Timestamp, ClosingPrice: trade.Price,
+			ClosingPriceTimestamp: trade.Timestamp, HighPrice: trade.Price, LowPrice: trade.Price, Volume: trade.Size,
+			Timestamp: timeStamp}
+		return
+	}
+	agg.Volume += trade.Size
+	var highestPrice float64
+	var lowestPrice float64
+	if trade.Timestamp < agg.OpenPriceTimestamp {
+		agg.OpenPrice = trade.Price
+		agg.OpenPriceTimestamp = trade.Timestamp
+	}
+	if trade.Timestamp > agg.ClosingPriceTimestamp {
+		agg.ClosingPrice = trade.Price
+		agg.ClosingPriceTimestamp = trade.Timestamp
+	}
+	if trade.Price > highestPrice {
+		highestPrice = trade.Price
+	}
+	if trade.Price < lowestPrice {
+		lowestPrice = trade.Price
+	}
 }
 
 func CalculateAggregate(trades []trade.TradeRequest, symbol string, timeStamp int64) Aggregate {
@@ -48,6 +80,14 @@ func CalculateAggregate(trades []trade.TradeRequest, symbol string, timeStamp in
 	agg.LowPrice = lowestPrice
 	agg.HighPrice = highestPrice
 	agg.Volume = totalVolume
+	//println("RETURNING AGGREGATE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	return agg
+}
 
+func GenerateAggregateList() *[]Aggregate {
+	aggList := make([]Aggregate, 120)
+	for i := range aggList {
+		aggList[i].MutexLock = &sync.Mutex{}
+	}
+	return &aggList
 }

@@ -8,11 +8,11 @@ import (
 
 var _ = Describe("Aggregate Test", func() {
 	arrayOfTrades := []trade.TradeRequest{
-		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 123.45, Size: 21, Conditions: []int{2, 12}, Timestamp: 1536036818784},
-		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 111.23, Size: 11, Conditions: []int{1, 4}, Timestamp: 1536036818782},
-		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 145.10, Size: 4, Conditions: []int{4, 1}, Timestamp: 1536036818786},
-		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 90.26, Size: 25, Conditions: []int{12, 1}, Timestamp: 1536036818794},
-		trade.TradeRequest{Event: "T", Symbol: "APPL", ExchangeId: 1, TradeId: "12345", Tape: 1, Price: 110.12, Size: 9, Conditions: []int{1}, Timestamp: 1536036818799},
+		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 123.45, Size: 21, Timestamp: 1536036818784},
+		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 111.23, Size: 11, Timestamp: 1536036818782},
+		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 145.10, Size: 4, Timestamp: 1536036818786},
+		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 90.26, Size: 25, Timestamp: 1536036818794},
+		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 110.12, Size: 9, Timestamp: 1536036818799},
 	}
 	startTimestamp := int64(1536036818784)
 	Describe("Given a slice of Trades", func() {
