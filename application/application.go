@@ -5,11 +5,13 @@ import (
 	"polygon-websocket-aggregator/service"
 )
 
+const webSocketUrl = "wss://delayed.polygon.io/stocks"
+
 func Start(tickerName string, level logrus.Level) {
 	logrus.SetLevel(level)
 	webSockets := service.TradeWebSocket{}
-	conn := webSockets.InitializeWSConnection(tickerName)
+	conn := webSockets.InitializeWSConnection(webSocketUrl, tickerName)
 	defer conn.Close()
-
-	service.InitiateAggregateCalculation(tickerName, conn)
+	aggService := service.AggregateService{}
+	aggService.InitiateAggregateCalculation(tickerName, conn, nil)
 }

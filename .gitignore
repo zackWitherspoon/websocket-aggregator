@@ -4,6 +4,10 @@
 *.dll
 *.so
 *.dylib
+*.coverprofile
+
+# Binary
+main
 
 # Test binary, built with `go test -c`
 *.test
