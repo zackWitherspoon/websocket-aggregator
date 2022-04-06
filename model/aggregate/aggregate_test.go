@@ -19,7 +19,7 @@ var _ = Describe("Aggregate Test", func() {
 		Context("When that slice of Trades is non-empty", func() {
 			It("Should correctly match the expected aggregate", func() {
 
-				expected := Aggregate{Symbol: "APPL", OpenPrice: 123.45, ClosingPrice: 110.12, HighPrice: 145.10, LowPrice: 90.26, Volume: 70, Timestamp: startTimestamp}
+				expected := Aggregate{Symbol: "APPL", OpenPrice: 111.23, OpenPriceTimestamp: 1536036818782, ClosingPrice: 110.12, ClosingPriceTimestamp: 1536036818799, HighPrice: 145.10, LowPrice: 90.26, Volume: 70, Timestamp: startTimestamp}
 				actual := CalculateAggregate(arrayOfTrades, "APPL", startTimestamp)
 				Expect(actual).To(Equal(expected))
 			})

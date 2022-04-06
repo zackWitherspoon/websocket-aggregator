@@ -62,8 +62,8 @@ func CalculateAggregate(trades []trade.TradeRequest, symbol string, timeStamp in
 	if len(trades) == 0 {
 		return agg
 	} else {
+		agg.OpenPriceTimestamp = trades[0].Timestamp
 		agg.OpenPrice = trades[0].Price
-		agg.ClosingPrice = trades[len(trades)-1].Price
 		highestPrice = math.SmallestNonzeroFloat64
 		lowestPrice = math.MaxFloat64
 	}
@@ -76,18 +76,17 @@ func CalculateAggregate(trades []trade.TradeRequest, symbol string, timeStamp in
 		if t.Price < lowestPrice {
 			lowestPrice = t.Price
 		}
+		if t.Timestamp < agg.OpenPriceTimestamp {
+			agg.OpenPrice = t.Price
+			agg.OpenPriceTimestamp = t.Timestamp
+		}
+		if t.Timestamp > agg.ClosingPriceTimestamp {
+			agg.ClosingPrice = t.Price
+			agg.ClosingPriceTimestamp = t.Timestamp
+		}
 	}
 	agg.LowPrice = lowestPrice
 	agg.HighPrice = highestPrice
 	agg.Volume = totalVolume
-	//println("RETURNING AGGREGATE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	return agg
-}
-
-func GenerateAggregateList() *[]Aggregate {
-	aggList := make([]Aggregate, 120)
-	for i := range aggList {
-		aggList[i].MutexLock = &sync.Mutex{}
-	}
-	return &aggList
 }

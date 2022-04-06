@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	APIKey = ""
+	APIKey = "JncA2_tG82oqnPqGQHyMj2BW_h2jCoQl"
 )
 
 type WebSocketClient interface {

@@ -107,7 +107,7 @@ var _ = Describe("Aggregate Test", func() {
 			It("Should correctly match the expected aggregate", func() {
 				a = twoTrades
 				mockConn := mockAggService.InitializeWSConnection(tickerName)
-				go aggService.InitiateAggregateCalculation(tickerName, mockConn, done)
+				go aggService.InitiateAggregateCalculation(tickerName, 1, mockConn, done)
 				time.Sleep(8 * time.Second)
 				println("Sending done")
 				done <- true
