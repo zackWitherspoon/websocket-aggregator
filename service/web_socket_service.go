@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	APIKey = "JncA2_tG82oqnPqGQHyMj2BW_h2jCoQl"
+	APIKey = ""
 )
 
 type WebSocketClient interface {
@@ -40,7 +40,7 @@ func (tradeWS *TradeWebSocket) InitializeWSConnection(url string, tickerName str
 	err = conn.ReadJSON(&responseMessage)
 	responseMessage.DebugResponse()
 	//subscribe to websocket
-	var a = []byte(fmt.Sprintf(subscribeMessage, tickerName))
+	var a = []byte(fmt.Sprint(subscribeMessage, tickerName))
 	subscribeError := conn.WriteMessage(websocket.TextMessage, a)
 	err = conn.ReadJSON(&responseMessage)
 	if err != nil {

@@ -2,14 +2,18 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
+	"os"
 	"polygon-websocket-aggregator/application"
 )
 
 const APIKEY = ""
-const CHANNELS = "T.SPY,Q.SPY"
 
 func main() {
 	//Get Ticker
-	ticker := "APPL"
-	application.Start(ticker, logrus.DebugLevel)
+	if len(os.Args) != 2 {
+		logrus.Error("Missing ticker name. Please include the ticker Name as the first argument.\n Example: ./main APPL")
+		os.Exit(1)
+	}
+	ticker := os.Args[1]
+	application.Start(ticker, logrus.InfoLevel)
 }

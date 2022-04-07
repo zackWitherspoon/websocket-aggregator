@@ -6,10 +6,10 @@ import (
 )
 
 const (
-	webSocketUrl        = "wss://delayed.polygon.io/stocks"
-	aggregateTime       = 5 * SecondAlteration
-	aggregateKeepWindow = 3600 * SecondAlteration
-	SecondAlteration    = 1000000000
+	webSocketUrl          = "wss://delayed.polygon.io/stocks"
+	aggregateTime         = 30 * SecondsInMilliseconds
+	aggregateKeepWindow   = 3600 * SecondsInMilliseconds
+	SecondsInMilliseconds = 1000000000
 )
 
 func Start(tickerName string, level logrus.Level) {

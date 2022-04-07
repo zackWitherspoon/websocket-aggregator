@@ -28,14 +28,11 @@ func (aggService *AggregateService) InitiateAggregateCalculation(tickerName stri
 }
 
 func (aggService *AggregateService) ProcessTrades(tickerName string, tickerDuration time.Duration, timeToKeepAggregates time.Duration, tradesQueue chan []trade.TradeRequest, done chan bool) {
-	println("tickerDuration =", tickerDuration)
-	println("timeToKeepAggregates =", timeToKeepAggregates)
+
 	var tradesList []trade.TradeRequest
 	var aggMap = make(map[aggregate.Duration]*aggregate.Aggregate)
-	var startTime int64
-	var currentSegmentTime int64
+	var startTime, currentSegmentTime int64
 	timeHasElapsed := false
-	println("tickerDuration.Nanoseconds()*1000 = ", tickerDuration.Nanoseconds())
 	lock := sync.Mutex{}
 	aggMapLock := &sync.RWMutex{}
 	ticker := time.NewTicker(tickerDuration)
@@ -45,30 +42,27 @@ func (aggService *AggregateService) ProcessTrades(tickerName string, tickerDurat
 		select {
 		case t := <-ticker.C:
 			lock.Lock()
+			logrus.Debugf("StartTime before: %d & currentSegmentTime: %dn", startTime, currentSegmentTime)
 			startTime, currentSegmentTime, tradesList = UpdateAggMap(tickerName, tickerDuration, timeToKeepAggregates, startTime, currentSegmentTime, tradesList, t, aggMap, timeHasElapsed, aggMapLock)
+			logrus.Debugf("StartTime after : %d & currentSegmentTime :%d \n", startTime, currentSegmentTime)
 			lock.Unlock()
 		case tradeSlice := <-tradesQueue:
 			for i := range tradeSlice {
-				tradeSlice[i].PrintTrade()
-				//TODO: Could improve this
 				if currentSegmentTime == 0 {
-					logrus.Debug("Setting current time & Start Time")
 					currentSegmentTime = tradeSlice[i].Timestamp
 					startTime = currentSegmentTime
 					lock.Lock()
 					tradesList = append(tradesList, tradeSlice[i])
 					lock.Unlock()
-					println("\t\t Just Set Start time to ", startTime)
-					println("\t\t Just Set currentSegmentTime to ", currentSegmentTime)
 				} else if tradeSlice[i].Timestamp > currentSegmentTime {
-					logrus.Debug("Current Timestamp > currentSegmentTime")
 					lock.Lock()
 					tradesList = append(tradesList, tradeSlice[i])
 					lock.Unlock()
 				} else {
-					println("Found a piece that was outside of the currentSegmentTime...", len(aggMap))
+					logrus.Info("Found a trade that was outside of the currentSegmentTime: %d\n", len(aggMap))
 					if len(aggMap) != 0 {
 						aggMapLock.RLock()
+						logrus.Info("Calling UpdatePastAgg due to lenAggmap not equaling 0")
 						aggMap = UpdatePastAgg(aggMap, tradeSlice[i])
 						aggMapLock.RUnlock()
 					}
@@ -76,7 +70,10 @@ func (aggService *AggregateService) ProcessTrades(tickerName string, tickerDurat
 			}
 		case <-keepAggregates.C:
 			aggMapLock.RLock()
-			aggMap = PruneOldAggregates(aggMap, &startTime, timeToKeepAggregates.Nanoseconds())
+			logrus.Debugf("Time to keep Aggregates has elipsed. There are currently %d items in the Aggregate Map\n", len(aggMap))
+			aggMap = PruneOldAggregates(aggMap, startTime, timeToKeepAggregates.Milliseconds())
+			timeHasElapsed = true
+			logrus.Debugf("After pruning Aggregates, we are left with  %d items in the Aggregate Map\n", len(aggMap))
 			aggMapLock.RUnlock()
 			keepAggregates.Stop()
 		case <-done:
@@ -108,8 +105,6 @@ func (aggService *AggregateService) AddTradesToBufferedChan(trades chan []byte, 
 			if err := json.Unmarshal(msgBytes, &m); err != nil {
 				logrus.Debugf("An error was encountered with one of the incoming trades. That trade looks like:\n\t %s\n", string(msgBytes))
 			} else {
-				println("len(tadesQueue)=", len(tradesQueue))
-				println("len(tadesQueue)=", len(trades))
 				tradesQueue <- m
 			}
 		}

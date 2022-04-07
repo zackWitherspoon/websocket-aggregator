@@ -2,7 +2,6 @@ package web_socket
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,5 +16,5 @@ func (resp *WebSocketResponse) DebugResponse() {
 	if err != nil {
 		logrus.Error(err)
 	}
-	logrus.Debug(fmt.Sprintf("Respose: %s", marshalledResponse))
+	logrus.Info("Response: %s", marshalledResponse)
 }

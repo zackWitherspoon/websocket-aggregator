@@ -2,6 +2,7 @@ package aggregate
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 	"polygon-websocket-aggregator/model/trade"
 	"sync"
@@ -22,8 +23,14 @@ type Aggregate struct {
 }
 
 func (agg *Aggregate) PrintAggregate() {
-	timestamp := time.Unix(agg.Timestamp, 0)
+	timestamp := time.UnixMilli(agg.Timestamp)
 	fmt.Printf("%d:%d:%.2d - open: $%.2f, close: $%.2f, high: $%.2f, low: $%.2f, volume: %d\n",
+		timestamp.Hour(), timestamp.Minute(), timestamp.Second(), agg.OpenPrice, agg.ClosingPrice, agg.HighPrice, agg.LowPrice, agg.Volume)
+}
+
+func DebugPrintAggregate(agg *Aggregate) {
+	timestamp := time.Unix(agg.Timestamp, 0)
+	logrus.Debugf("%d:%d:%.2d - open: $%.2f, close: $%.2f, high: $%.2f, low: $%.2f, volume: %d\n",
 		timestamp.Hour(), timestamp.Minute(), timestamp.Second(), agg.OpenPrice, agg.ClosingPrice, agg.HighPrice, agg.LowPrice, agg.Volume)
 }
 

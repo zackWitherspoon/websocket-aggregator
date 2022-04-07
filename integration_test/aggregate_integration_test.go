@@ -111,7 +111,7 @@ var _ = Describe("Aggregate Test", func() {
 				a = twoTrades
 				printOutOfOrderTrades = true
 				mockConn := mockAggService.InitializeWSConnection(tickerName)
-				go aggService.InitiateAggregateCalculation(tickerName, 1*application.SecondAlteration, 2*application.SecondAlteration, mockConn, done)
+				go aggService.InitiateAggregateCalculation(tickerName, 1*application.SecondsInMilliseconds, 2*application.SecondsInMilliseconds, mockConn, done)
 				time.Sleep(8 * time.Second)
 
 				time.Sleep(8 * time.Second)

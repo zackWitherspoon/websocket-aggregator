@@ -12,9 +12,10 @@ func UpdatePastAgg(aggMap map[aggregate.Duration]*aggregate.Aggregate, tradeSlic
 	logrus.Debugf("Current Timestamp Outside the bounds of what we can keep track of. Searching through %d aggMap size", len(aggMap))
 	for key, element := range aggMap {
 		if key.Between(tradeSlice.Timestamp) {
-			logrus.Debug("Current Timestamp is updating an older timeStamp")
+			logrus.Infof("\tUpdating Agg with timeStamp: %d and Volume: %d", element.Timestamp, element.Volume)
+			logrus.Infof("\tUpdating Agg with timeStamp: ", tradeSlice.Timestamp)
 			element.UpdateAggregate(tradeSlice)
-			println("\t\tPrinting Aggregate From the past")
+			logrus.Infof("\tPrinting Agg with timeStamp: %d and Volume: %d", tradeSlice.Timestamp, element.Volume)
 			element.PrintAggregate()
 		}
 	}
@@ -25,36 +26,37 @@ func UpdateAggMap(tickerName string, tickerDuration time.Duration, timeToKeepAgg
 	tradesList []trade.TradeRequest, t time.Time, aggMap map[aggregate.Duration]*aggregate.Aggregate,
 	timeHasElapsed bool, aggMapLock *sync.RWMutex) (int64, int64, []trade.TradeRequest) {
 
-	agg := aggregate.CalculateAggregate(tradesList, tickerName, t.Unix()-(time.Second*tickerDuration).Nanoseconds()*1000)
+	agg := aggregate.CalculateAggregate(tradesList, tickerName, currentSegmentTime)
 	key := aggregate.Duration{}
 	if len(aggMap) == 0 {
-		key.StartTime = agg.ClosingPriceTimestamp - tickerDuration.Nanoseconds()
+		key.StartTime = agg.ClosingPriceTimestamp - tickerDuration.Milliseconds()
 		key.EndTime = agg.ClosingPriceTimestamp
-		startTime = agg.ClosingPriceTimestamp - tickerDuration.Nanoseconds()
+		startTime = agg.ClosingPriceTimestamp - tickerDuration.Milliseconds()
 		currentSegmentTime = agg.ClosingPriceTimestamp
 	} else {
 		key.StartTime = currentSegmentTime
-		key.EndTime = currentSegmentTime + tickerDuration.Nanoseconds()
-		currentSegmentTime = currentSegmentTime + tickerDuration.Nanoseconds()
+		key.EndTime = currentSegmentTime + tickerDuration.Milliseconds()
+		currentSegmentTime = currentSegmentTime + tickerDuration.Milliseconds()
 		if timeHasElapsed {
 			aggMapLock.RLock()
-			aggMap = PruneOldAggregates(aggMap, &startTime, (timeToKeepAggregates).Nanoseconds())
+			logrus.Debugf("Time to keep Aggregates has elipsed. There are currently %d items in the Aggregate Map\n", len(aggMap))
+			aggMap = PruneOldAggregates(aggMap, startTime, (timeToKeepAggregates).Milliseconds())
+			logrus.Debugf("After pruning Aggregates, we are left with  %d items in the Aggregate Map\n", len(aggMap))
 			aggMapLock.RUnlock()
-			startTime += tickerDuration.Nanoseconds()
+			startTime += tickerDuration.Milliseconds()
 		}
 	}
 	aggMap[key] = &agg
-	println("\t\tPrinting Aggregate from TICKER")
 	agg.PrintAggregate()
 	tradesList = []trade.TradeRequest{}
 	return startTime, currentSegmentTime, tradesList
 }
 
-func PruneOldAggregates(aggMap map[aggregate.Duration]*aggregate.Aggregate, startTime *int64, timeToKeepAggregates int64) map[aggregate.Duration]*aggregate.Aggregate {
-	for key, _ := range aggMap {
-		if key.StartTime > *startTime+timeToKeepAggregates {
-			a := timeToKeepAggregates
-			startTime = &a
+func PruneOldAggregates(aggMap map[aggregate.Duration]*aggregate.Aggregate, startTime int64, timeToKeepAggregates int64) map[aggregate.Duration]*aggregate.Aggregate {
+	for key, element := range aggMap {
+		if key.StartTime-startTime < 0 {
+			logrus.Debugf("\t\tPruning an Aggregate from the Map: ")
+			aggregate.DebugPrintAggregate(element)
 			delete(aggMap, key)
 		}
 	}
