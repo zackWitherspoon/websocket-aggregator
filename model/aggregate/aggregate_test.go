@@ -27,21 +27,21 @@ var _ = Describe("Aggregate Test", func() {
 			It("Should correctly match the expected aggregate", func() {
 
 				expected := Aggregate{Symbol: "APPL", OpenPrice: 111.23, OpenPriceTimestamp: 1536036818782, ClosingPrice: 110.12, ClosingPriceTimestamp: 1536036818799, HighPrice: 145.10, LowPrice: 90.26, Volume: 70, Timestamp: startTimestamp, MutexLock: &sync.Mutex{}}
-				actual := CalculateAggregate(arrayOfTrades, "APPL", startTimestamp)
+				actual := Calculate(arrayOfTrades, "APPL", startTimestamp)
 				Expect(actual).To(Equal(expected))
 			})
 		})
 		Context("When that slice of Trades is empty", func() {
 			It("Should correctly return an empty Aggregate", func() {
 				expected := Aggregate{Symbol: "APPL", OpenPrice: 0, ClosingPrice: 0, HighPrice: 0, LowPrice: 0, Volume: 0, Timestamp: startTimestamp, MutexLock: &sync.Mutex{}}
-				actual := CalculateAggregate([]trade.TradeRequest{}, "APPL", startTimestamp)
+				actual := Calculate([]trade.TradeRequest{}, "APPL", startTimestamp)
 				Expect(actual).To(Equal(expected))
 			})
 		})
 		Context("When that slice of Trades is empty", func() {
 			It("Should correctly return an empty Aggregate", func() {
 				expected := Aggregate{Symbol: "APPL", OpenPrice: 0, ClosingPrice: 0, HighPrice: 0, LowPrice: 0, Volume: 0, Timestamp: startTimestamp, MutexLock: &sync.Mutex{}}
-				actual := CalculateAggregate([]trade.TradeRequest{}, "APPL", startTimestamp)
+				actual := Calculate([]trade.TradeRequest{}, "APPL", startTimestamp)
 				Expect(actual).To(Equal(expected))
 			})
 		})
@@ -56,7 +56,7 @@ var _ = Describe("Aggregate Test", func() {
 				expected.OpenPrice = incomingPastTrade.Price
 				expected.OpenPriceTimestamp = incomingPastTrade.Timestamp
 				expected.Volume += incomingPastTrade.Size
-				initialAggregate.UpdateAggregate(incomingPastTrade)
+				initialAggregate.Update(incomingPastTrade)
 				Expect(initialAggregate).To(Equal(expected))
 			})
 		})
@@ -69,7 +69,7 @@ var _ = Describe("Aggregate Test", func() {
 				expected.ClosingPrice = incomingPastTrade.Price
 				expected.ClosingPriceTimestamp = incomingPastTrade.Timestamp
 				expected.Volume += incomingPastTrade.Size
-				initialAggregate.UpdateAggregate(incomingPastTrade)
+				initialAggregate.Update(incomingPastTrade)
 				Expect(initialAggregate).To(Equal(expected))
 			})
 		})
@@ -80,7 +80,7 @@ var _ = Describe("Aggregate Test", func() {
 				expected := initialAggregate
 				expected.HighPrice = incomingPastTrade.Price
 				expected.Volume += incomingPastTrade.Size
-				initialAggregate.UpdateAggregate(incomingPastTrade)
+				initialAggregate.Update(incomingPastTrade)
 				Expect(initialAggregate).To(Equal(expected))
 			})
 		})
@@ -91,7 +91,7 @@ var _ = Describe("Aggregate Test", func() {
 				expected := initialAggregate
 				expected.LowPrice = incomingPastTrade.Price
 				expected.Volume += incomingPastTrade.Size
-				initialAggregate.UpdateAggregate(incomingPastTrade)
+				initialAggregate.Update(incomingPastTrade)
 				Expect(initialAggregate).To(Equal(expected))
 			})
 		})

@@ -11,10 +11,10 @@ type WebSocketResponse []struct {
 	Message string `json:"message"`
 }
 
-func (resp *WebSocketResponse) DebugResponse() {
-	marshalledResponse, err := json.MarshalIndent(resp, "", "\t")
+func (wsResponse *WebSocketResponse) DebugResponse() {
+	marshalledResponse, err := json.MarshalIndent(wsResponse, "", "\t")
 	if err != nil {
 		logrus.Error(err)
 	}
-	logrus.Info("Response: %s", marshalledResponse)
+	logrus.Debug("Response: %s", marshalledResponse)
 }

@@ -6,8 +6,6 @@ import (
 	"polygon-websocket-aggregator/application"
 )
 
-const APIKEY = ""
-
 func main() {
 	//Get Ticker
 	if len(os.Args) != 2 {

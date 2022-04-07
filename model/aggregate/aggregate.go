@@ -22,19 +22,19 @@ type Aggregate struct {
 	MutexLock             *sync.Mutex
 }
 
-func (agg *Aggregate) PrintAggregate() {
-	timestamp := time.UnixMilli(agg.Timestamp)
+func (agg *Aggregate) Print() {
+	unixTimestamp := time.UnixMilli(agg.Timestamp)
 	fmt.Printf("%d:%d:%.2d - open: $%.2f, close: $%.2f, high: $%.2f, low: $%.2f, volume: %d\n",
-		timestamp.Hour(), timestamp.Minute(), timestamp.Second(), agg.OpenPrice, agg.ClosingPrice, agg.HighPrice, agg.LowPrice, agg.Volume)
+		unixTimestamp.Hour(), unixTimestamp.Minute(), unixTimestamp.Second(), agg.OpenPrice, agg.ClosingPrice, agg.HighPrice, agg.LowPrice, agg.Volume)
 }
 
-func DebugPrintAggregate(agg *Aggregate) {
-	timestamp := time.Unix(agg.Timestamp, 0)
+func (agg *Aggregate) DebugAggregate() {
+	unixTimestamp := time.Unix(agg.Timestamp, 0)
 	logrus.Debugf("%d:%d:%.2d - open: $%.2f, close: $%.2f, high: $%.2f, low: $%.2f, volume: %d\n",
-		timestamp.Hour(), timestamp.Minute(), timestamp.Second(), agg.OpenPrice, agg.ClosingPrice, agg.HighPrice, agg.LowPrice, agg.Volume)
+		unixTimestamp.Hour(), unixTimestamp.Minute(), unixTimestamp.Second(), agg.OpenPrice, agg.ClosingPrice, agg.HighPrice, agg.LowPrice, agg.Volume)
 }
 
-func (agg *Aggregate) UpdateAggregate(trade trade.TradeRequest) {
+func (agg *Aggregate) Update(trade trade.TradeRequest) {
 	agg.MutexLock.Lock()
 	defer agg.MutexLock.Unlock()
 
@@ -55,11 +55,12 @@ func (agg *Aggregate) UpdateAggregate(trade trade.TradeRequest) {
 	}
 }
 
-func CalculateAggregate(trades []trade.TradeRequest, symbol string, timeStamp int64) Aggregate {
-	agg := Aggregate{Symbol: symbol, Volume: 0, Timestamp: timeStamp, MutexLock: &sync.Mutex{}}
+func Calculate(trades []trade.TradeRequest, tickerName string, timeStamp int64) Aggregate {
+	agg := Aggregate{Symbol: tickerName, Timestamp: timeStamp, MutexLock: &sync.Mutex{}}
 	var highestPrice float64
 	var lowestPrice float64
 	if len(trades) == 0 {
+		// all other values will be initialized to 0 due to the way Golang creates primal types
 		return agg
 	} else {
 		agg.OpenPriceTimestamp = trades[0].Timestamp

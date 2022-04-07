@@ -29,7 +29,7 @@ var _ = Describe("Aggregate Test", func() {
 		Context("When an aggregate has been around for more than the expiration time", func() {
 			It("Should prune the old aggregate", func() {
 				startTime := startTimestamp
-				expected := PruneOldAggregates(aggMap, &startTime, 4*1000000000)
+				expected := PruneExpiredAggregates(aggMap, startTime)
 				Expect(len(expected)).To(Equal(2))
 			})
 		})

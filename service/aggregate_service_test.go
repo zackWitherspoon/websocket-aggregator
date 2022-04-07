@@ -11,16 +11,16 @@ const tickerName = "TSLA"
 
 //type mockAggregateService struct{}
 //
-//func (mockAggregateService) InitiateAggregateCalculation(tickerName string, conn *websocket.Conn) {
+//func (mockAggregateService) InitiateAggregateSequence(tickerName string, conn *websocket.Conn) {
 //	//TODO: RETURN SOMETHING HERE
 //}
-//func (mockAggregateService) AddTradesToBufferedChan(trades chan []byte, tradesQueue chan []trade.TradeRequest) {
+//func (mockAggregateService) AddTradeObjectsToBufferedChan(trades chan []byte, tradesQueue chan []trade.TradeRequest) {
 //	//TODO: RETURN SOMETHING HERE
 //}
-//func (mockAggregateService) SendTradesToChan(trades chan []byte, tradesQueue chan []trade.TradeRequest, conn *websocket.Conn) {
+//func (mockAggregateService) AddIncomingBytesToBufferedChan(trades chan []byte, tradesQueue chan []trade.TradeRequest, conn *websocket.Conn) {
 //	//TODO: RETURN SOMETHING HERE
 //}
-//func (mockAggregateService) ProcessTrades(tickerName string, tradesQueue chan []trade.TradeRequest, trades chan []byte) {
+//func (mockAggregateService) ProcessTradesChan(tickerName string, tradesQueue chan []trade.TradeRequest, trades chan []byte) {
 //	//TODO: RETURN SOMETHING HERE
 //}
 var twoTrades = []byte(`[{"ev":"T","sym":"TSLA","i":"15589","x":19,"p":1114.38,"s":13,"c":[14,37,41],"t":1649169893847,"q":1769466,"z":3},{"ev":"T","sym":"TSLA","i":"15590","x":19,"p":1114.37,"s":6,"c":[14,37,41],"t":1649169893847,"q":1769467,"z":3}]`)
@@ -52,7 +52,7 @@ var _ = Describe("Aggregate Test", func() {
 		Context("When there are messages in the trades chan"+
 			"And these messages have only 1 trade object in them", func() {
 			It("Should be process all messages and change them into []Trades", func() {
-				go aggService.AddTradesToBufferedChan(trades, tradesQueue, done)
+				go aggService.AddTradeObjectsToBufferedChan(trades, tradesQueue, done)
 				for i := 0; i < 10; i++ {
 					trades <- oneTrades
 					time.Sleep(500 * time.Millisecond)
@@ -68,7 +68,7 @@ var _ = Describe("Aggregate Test", func() {
 		Context("When there are messages in the trades chan"+
 			"And these messages have 2 trade object in them", func() {
 			It("Should be process all messages and change them into []Trades", func() {
-				go aggService.AddTradesToBufferedChan(trades, tradesQueue, done)
+				go aggService.AddTradeObjectsToBufferedChan(trades, tradesQueue, done)
 				for i := 0; i < 10; i++ {
 					trades <- twoTrades
 					time.Sleep(500 * time.Millisecond)

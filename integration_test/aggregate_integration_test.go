@@ -96,8 +96,8 @@ var _ = Describe("Aggregate Test", func() {
 			It("Should correctly match the expected aggregate", func() {
 				a = oneTrades
 				mockConn := mockAggService.InitializeWSConnection(tickerName)
-				go aggService.AddTradesToBufferedChan(trades, tradesQueue, done)
-				go aggService.SendTradesToChan(trades, mockConn)
+				go aggService.AddTradeObjectsToBufferedChan(trades, tradesQueue, done)
+				go aggService.AddIncomingBytesToBufferedChan(trades, mockConn)
 				time.Sleep(8 * time.Second)
 				fmt.Println("Sending done")
 				done <- true
@@ -111,7 +111,7 @@ var _ = Describe("Aggregate Test", func() {
 				a = twoTrades
 				printOutOfOrderTrades = true
 				mockConn := mockAggService.InitializeWSConnection(tickerName)
-				go aggService.InitiateAggregateCalculation(tickerName, 1*application.SecondsInMilliseconds, 2*application.SecondsInMilliseconds, mockConn, done)
+				go aggService.InitiateAggregateSequence(tickerName, 1*application.SecondsInMilliseconds, 2*application.SecondsInMilliseconds, mockConn, done)
 				time.Sleep(8 * time.Second)
 
 				time.Sleep(8 * time.Second)

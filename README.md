@@ -44,5 +44,5 @@ ginkgo -r --cover
 #### To run the app
 ````
 // execute the following
-go run main.go TICKER_NAME_HERE 
+./main TICKER_NAME_HERE 
 ````

@@ -6,17 +6,19 @@ import (
 )
 
 const (
-	webSocketUrl          = "wss://delayed.polygon.io/stocks"
-	aggregateTime         = 30 * SecondsInMilliseconds
-	aggregateKeepWindow   = 3600 * SecondsInMilliseconds
+	//TODO: Before going to production, the following would want to be things we might want to grab from env variables/volume
+	webSocketUrl              = "wss://delayed.polygon.io/stocks"
+	aggregateTimeWindow       = 30 * SecondsInMilliseconds
+	aggregatePersistentWindow = 3600 * SecondsInMilliseconds
+
 	SecondsInMilliseconds = 1000000000
 )
 
 func Start(tickerName string, level logrus.Level) {
 	logrus.SetLevel(level)
-	webSockets := service.TradeWebSocket{}
-	conn := webSockets.InitializeWSConnection(webSocketUrl, tickerName)
-	defer conn.Close()
+	webSocket := service.TradeWebSocket{}
+	wsConn := webSocket.InitializeWSConnection(webSocketUrl, tickerName)
+	defer wsConn.Close()
 	aggService := service.AggregateService{}
-	aggService.InitiateAggregateCalculation(tickerName, aggregateTime, aggregateKeepWindow, conn, nil)
+	aggService.InitiateAggregateSequence(tickerName, aggregateTimeWindow, aggregatePersistentWindow, wsConn, nil)
 }

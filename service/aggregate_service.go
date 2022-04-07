@@ -11,101 +11,101 @@ import (
 )
 
 type AggregateServicer interface {
-	InitiateAggregateCalculation(tickerName string, tickerDuration time.Duration, conn *websocket.Conn, done chan bool)
-	AddTradesToBufferedChan(trades chan []byte, tradesQueue chan []trade.TradeRequest, done chan bool)
-	SendTradesToChan(trades chan []byte, conn *websocket.Conn)
-	ProcessTrades(tickerName string, tradesQueue chan []trade.TradeRequest, done chan bool)
+	InitiateAggregateSequence(tickerName string, tickerDuration time.Duration, conn *websocket.Conn, testingInterruptChan chan bool)
+	AddTradeObjectsToBufferedChan(trades chan []byte, tradesQueue chan []trade.TradeRequest, testingInterruptChan chan bool)
+	AddIncomingBytesToBufferedChan(trades chan []byte, conn *websocket.Conn)
+	ProcessTradesChan(tickerName string, tradesQueue chan []trade.TradeRequest, testingInterruptChan chan bool)
 }
 type AggregateService struct{}
 
-func (aggService *AggregateService) InitiateAggregateCalculation(tickerName string, tickerDuration time.Duration, timeToKeepAggregates time.Duration, conn *websocket.Conn, done chan bool) {
-	trades := make(chan []byte, 10000)
-	tradesQueue := make(chan []trade.TradeRequest, 10000)
+func (aggService *AggregateService) InitiateAggregateSequence(tickerName string, tickerDuration time.Duration, aggregateCacheTime time.Duration, wsConn *websocket.Conn, testingInterruptChan chan bool) {
+	incomingByteChan := make(chan []byte, 10000)
+	tradesListChan := make(chan []trade.TradeRequest, 10000)
 
-	go aggService.ProcessTrades(tickerName, tickerDuration, timeToKeepAggregates, tradesQueue, done)
-	go aggService.AddTradesToBufferedChan(trades, tradesQueue, done)
-	aggService.SendTradesToChan(trades, conn)
+	go aggService.ProcessTradesChan(tickerName, tickerDuration, aggregateCacheTime, tradesListChan, testingInterruptChan)
+	go aggService.AddTradeObjectsToBufferedChan(incomingByteChan, tradesListChan, testingInterruptChan)
+	aggService.AddIncomingBytesToBufferedChan(incomingByteChan, wsConn)
 }
 
-func (aggService *AggregateService) ProcessTrades(tickerName string, tickerDuration time.Duration, timeToKeepAggregates time.Duration, tradesQueue chan []trade.TradeRequest, done chan bool) {
+func (aggService *AggregateService) ProcessTradesChan(tickerName string, tickerDuration time.Duration, timeToKeepAggregates time.Duration, tradesQueue chan []trade.TradeRequest, testingInterruptChan chan bool) {
 
 	var tradesList []trade.TradeRequest
 	var aggMap = make(map[aggregate.Duration]*aggregate.Aggregate)
-	var startTime, currentSegmentTime int64
-	timeHasElapsed := false
-	lock := sync.Mutex{}
+	var rollingStartWindowTimestamp, rollingCurrentWindowTimestamp int64
+	rollingTimeWindowEnabled := false
+	tradeProcessingLock := sync.Mutex{}
 	aggMapLock := &sync.RWMutex{}
-	ticker := time.NewTicker(tickerDuration)
-	keepAggregates := time.NewTicker(timeToKeepAggregates)
-	defer ticker.Stop()
+	aggregateWindow := time.NewTicker(tickerDuration)
+	cacheEnabledTicker := time.NewTicker(timeToKeepAggregates)
+	defer aggregateWindow.Stop()
 	for {
 		select {
-		case t := <-ticker.C:
-			lock.Lock()
-			logrus.Debugf("StartTime before: %d & currentSegmentTime: %dn", startTime, currentSegmentTime)
-			startTime, currentSegmentTime, tradesList = UpdateAggMap(tickerName, tickerDuration, timeToKeepAggregates, startTime, currentSegmentTime, tradesList, t, aggMap, timeHasElapsed, aggMapLock)
-			logrus.Debugf("StartTime after : %d & currentSegmentTime :%d \n", startTime, currentSegmentTime)
-			lock.Unlock()
-		case tradeSlice := <-tradesQueue:
-			for i := range tradeSlice {
-				if currentSegmentTime == 0 {
-					currentSegmentTime = tradeSlice[i].Timestamp
-					startTime = currentSegmentTime
-					lock.Lock()
-					tradesList = append(tradesList, tradeSlice[i])
-					lock.Unlock()
-				} else if tradeSlice[i].Timestamp > currentSegmentTime {
-					lock.Lock()
-					tradesList = append(tradesList, tradeSlice[i])
-					lock.Unlock()
+		case <-aggregateWindow.C:
+			tradeProcessingLock.Lock()
+			logrus.Debugf("rollingStartWindowTimestamp before: %d & rollingCurrentWindowTimestamp: %dn", rollingStartWindowTimestamp, rollingCurrentWindowTimestamp)
+			rollingStartWindowTimestamp, rollingCurrentWindowTimestamp, tradesList = UpdateAggMap(tickerName, tickerDuration, rollingStartWindowTimestamp, rollingCurrentWindowTimestamp, tradesList, aggMap, rollingTimeWindowEnabled, aggMapLock)
+			logrus.Debugf("rollingStartWindowTimestamp after : %d & rollingCurrentWindowTimestamp :%d \n", rollingStartWindowTimestamp, rollingCurrentWindowTimestamp)
+			tradeProcessingLock.Unlock()
+		case incomingTradeList := <-tradesQueue:
+			for i := range incomingTradeList {
+				if rollingCurrentWindowTimestamp == 0 {
+					rollingCurrentWindowTimestamp = incomingTradeList[i].Timestamp
+					rollingStartWindowTimestamp = rollingCurrentWindowTimestamp
+					tradeProcessingLock.Lock()
+					tradesList = append(tradesList, incomingTradeList[i])
+					tradeProcessingLock.Unlock()
+				} else if incomingTradeList[i].Timestamp > rollingCurrentWindowTimestamp {
+					tradeProcessingLock.Lock()
+					tradesList = append(tradesList, incomingTradeList[i])
+					tradeProcessingLock.Unlock()
 				} else {
-					logrus.Info("Found a trade that was outside of the currentSegmentTime: %d\n", len(aggMap))
+					logrus.Debug("Found a trade that was outside of the rollingCurrentWindowTimestamp: %d\n", len(aggMap))
 					if len(aggMap) != 0 {
 						aggMapLock.RLock()
-						logrus.Info("Calling UpdatePastAgg due to lenAggmap not equaling 0")
-						aggMap = UpdatePastAgg(aggMap, tradeSlice[i])
+						logrus.Debug("Calling UpdatePastAgg due to len aggMap not equaling 0")
+						aggMap = UpdatePastAgg(aggMap, incomingTradeList[i])
 						aggMapLock.RUnlock()
 					}
 				}
 			}
-		case <-keepAggregates.C:
+		case <-cacheEnabledTicker.C:
 			aggMapLock.RLock()
 			logrus.Debugf("Time to keep Aggregates has elipsed. There are currently %d items in the Aggregate Map\n", len(aggMap))
-			aggMap = PruneOldAggregates(aggMap, startTime, timeToKeepAggregates.Milliseconds())
-			timeHasElapsed = true
+			aggMap = PruneExpiredAggregates(aggMap, rollingStartWindowTimestamp)
+			rollingTimeWindowEnabled = true
 			logrus.Debugf("After pruning Aggregates, we are left with  %d items in the Aggregate Map\n", len(aggMap))
 			aggMapLock.RUnlock()
-			keepAggregates.Stop()
-		case <-done:
+			cacheEnabledTicker.Stop()
+		case <-testingInterruptChan:
 			return
 		}
 	}
 }
 
-func (aggService *AggregateService) SendTradesToChan(trades chan []byte, conn *websocket.Conn) {
+func (aggService *AggregateService) AddIncomingBytesToBufferedChan(incomingByteChan chan []byte, wsConn *websocket.Conn) {
 	logrus.Debug("Scanner from connection -> []byte running")
 	for {
 		var msg []byte
-		_, msg, err := conn.ReadMessage()
+		_, msg, err := wsConn.ReadMessage()
 		if err != nil {
 			panic(err)
 		}
-		trades <- msg
+		incomingByteChan <- msg
 	}
 }
 
-func (aggService *AggregateService) AddTradesToBufferedChan(trades chan []byte, tradesQueue chan []trade.TradeRequest, done chan bool) {
+func (aggService *AggregateService) AddTradeObjectsToBufferedChan(incomingByteChan chan []byte, tradesListChan chan []trade.TradeRequest, testingInterruptChan chan bool) {
 	logrus.Debug("Scanner for []byte -> []trade.TradeRequest running")
 	for {
 		select {
-		case <-done:
+		case <-testingInterruptChan:
 			return
-		case msgBytes := <-trades:
+		case msgBytes := <-incomingByteChan:
 			var m []trade.TradeRequest
 			if err := json.Unmarshal(msgBytes, &m); err != nil {
-				logrus.Debugf("An error was encountered with one of the incoming trades. That trade looks like:\n\t %s\n", string(msgBytes))
+				logrus.Debugf("An error was encountered with one of the incoming incomingByteChan. That trade looks like:\n\t %s\n", string(msgBytes))
 			} else {
-				tradesQueue <- m
+				tradesListChan <- m
 			}
 		}
 	}
