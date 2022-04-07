@@ -19,6 +19,4 @@ func (trade *TradeRequest) PrintTrade() {
 		panic(err)
 	}
 	fmt.Println(string(res))
-	//fmt.Printf("{  \"sym\": \"%s\", \"i\": \"%s\", \"z\": %d, \"p\": %e, \"s\": %d, \"c\": %s, \"t\": %v }\n",
-	//	v.Symbol, trade.ExchangeId, trade.TradeId, trade.Tape, trade.Price, trade.Size, conditionString, trade.Timestamp)
 }

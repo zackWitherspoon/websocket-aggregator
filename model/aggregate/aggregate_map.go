@@ -5,8 +5,8 @@ type Duration struct {
 	EndTime   int64
 }
 
-func (dur *Duration) Between(ts int64) bool {
-	if ts > dur.StartTime && ts <= dur.EndTime {
+func (dur *Duration) Between(timestamp int64) bool {
+	if timestamp > dur.StartTime && timestamp <= dur.EndTime {
 		return true
 	}
 	return false

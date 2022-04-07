@@ -35,6 +35,7 @@ func (aggService *AggregateService) ProcessTrades(tickerName string, tickerDurat
 	var startTime int64
 	var currentSegmentTime int64
 	timeHasElapsed := false
+	println("tickerDuration.Nanoseconds()*1000 = ", tickerDuration.Nanoseconds())
 	lock := sync.Mutex{}
 	aggMapLock := &sync.RWMutex{}
 	ticker := time.NewTicker(tickerDuration)
@@ -44,7 +45,7 @@ func (aggService *AggregateService) ProcessTrades(tickerName string, tickerDurat
 		select {
 		case t := <-ticker.C:
 			lock.Lock()
-			startTime, currentSegmentTime, tradesList = aggService.updateAggMap(tickerName, tickerDuration, startTime, currentSegmentTime, tradesList, t, aggMap, timeHasElapsed)
+			startTime, currentSegmentTime, tradesList = UpdateAggMap(tickerName, tickerDuration, timeToKeepAggregates, startTime, currentSegmentTime, tradesList, t, aggMap, timeHasElapsed, aggMapLock)
 			lock.Unlock()
 		case tradeSlice := <-tradesQueue:
 			for i := range tradeSlice {
@@ -68,14 +69,14 @@ func (aggService *AggregateService) ProcessTrades(tickerName string, tickerDurat
 					println("Found a piece that was outside of the currentSegmentTime...", len(aggMap))
 					if len(aggMap) != 0 {
 						aggMapLock.RLock()
-						aggMap = UpdatePastAgg(tickerName, aggMap, tradeSlice, i)
+						aggMap = UpdatePastAgg(aggMap, tradeSlice[i])
 						aggMapLock.RUnlock()
 					}
 				}
 			}
 		case <-keepAggregates.C:
 			aggMapLock.RLock()
-			aggMap = PruneOldAggregates(aggMap, &startTime, timeToKeepAggregates)
+			aggMap = PruneOldAggregates(aggMap, &startTime, timeToKeepAggregates.Nanoseconds())
 			aggMapLock.RUnlock()
 			keepAggregates.Stop()
 		case <-done:
