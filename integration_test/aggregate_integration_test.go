@@ -1,12 +1,15 @@
 package integration_test
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/gorilla/websocket"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"polygon-websocket-aggregator/application"
 	"polygon-websocket-aggregator/model/trade"
 	"polygon-websocket-aggregator/service"
@@ -22,42 +25,33 @@ func (MWS mockWebService) InitializeWSConnection(string) *websocket.Conn {
 	return createMockConn()
 }
 
-var printOutOfOrderTrades = false
-
-var twoTrades = []byte(`[{"ev":"T","sym":"TSLA","i":"15589","x":19,"p":1114.38,"s":13,"c":[14,37,41],"t":1649169893847,"q":1769466,"z":3},{"ev":"T","sym":"TSLA","i":"15590","x":19,"p":1114.37,"s":6,"c":[14,37,41],"t":1649169893847,"q":1769467,"z":3}]`)
-var twoTradesInThePast = []byte(`[{"ev":"T","sym":"TSLA","i":"15589","x":19,"p":1114.38,"s":13,"c":[14,37,41],"t":1649169893847,"q":1769466,"z":3},{"ev":"T","sym":"TSLA","i":"15590","x":19,"p":1114.37,"s":6,"c":[14,37,41],"t":1649169893847,"q":1769467,"z":3}]`)
-var oneTrades = []byte(`[{"ev":"T","sym":"TSLA","i":"82186","x":4,"p":1114.31,"s":1,"c":[37],"t":1649169893984,"q":1769499,"z":3}]`)
+var outOfOrder = false
 var upgrader = websocket.Upgrader{}
 
-var a []byte
-
 func writeTrades(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		return
+	file := "6_trades.txt"
+	if outOfOrder {
+		file = "18_trades.txt"
 	}
-	for i := 1; i < 5; i++ {
-		fmt.Printf("Adding the following message %d with text: %s\n", i, string(a))
-		if err := c.WriteMessage(websocket.TextMessage, a); err != nil {
-			println("%v", err)
+	c, err := upgrader.Upgrade(w, r, nil)
+	tradesText, err := os.Open(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tradesText.Close()
+	reader := bufio.NewScanner(tradesText)
+	for reader.Scan() {
+		fmt.Printf("Adding the following message with text: %s\n", string(reader.Text()))
+		if err := c.WriteMessage(websocket.TextMessage, []byte(reader.Text())); err != nil {
+			println("ERROR!!!! %v", err)
 		}
 		if err != nil {
-			println("ERROR!")
+			log.Fatalf("An error has occurred in writing the messages out %s \n", err.Error())
 		}
 		time.Sleep(1 * time.Second)
 	}
-	if printOutOfOrderTrades {
-		a = twoTradesInThePast
-		for i := 1; i < 5; i++ {
-			fmt.Printf("Adding the following message %d with text: %s\n", i, string(a))
-			if err := c.WriteMessage(websocket.TextMessage, a); err != nil {
-				println("%v", err)
-			}
-			if err != nil {
-				println("ERROR!")
-			}
-			time.Sleep(1 * time.Second)
-		}
+	if err := reader.Err(); err != nil {
+		log.Fatalf("An error has occurred with the reader: %s\n", err.Error())
 	}
 }
 
@@ -73,14 +67,15 @@ func createMockConn() *websocket.Conn {
 	return ws
 }
 
+var (
+	trades         chan []byte
+	tradesQueue    chan []trade.TradeRequest
+	done           chan bool
+	mockAggService mockWebService
+	aggService     service.AggregateService
+)
+
 var _ = Describe("Aggregate Test", func() {
-	var (
-		trades         chan []byte
-		tradesQueue    chan []trade.TradeRequest
-		done           chan bool
-		mockAggService mockWebService
-		aggService     service.AggregateService
-	)
 
 	BeforeEach(func() {
 		mockAggService = mockWebService{}
@@ -94,27 +89,23 @@ var _ = Describe("Aggregate Test", func() {
 	Describe("Given createMockConn connection to createMockConn websocket", func() {
 		Context("When that websocket is sending createMockConn stream of tradeRequests", func() {
 			It("Should correctly match the expected aggregate", func() {
-				a = oneTrades
 				mockConn := mockAggService.InitializeWSConnection(tickerName)
 				go aggService.AddTradeObjectsToBufferedChan(trades, tradesQueue, done)
 				go aggService.AddIncomingBytesToBufferedChan(trades, mockConn)
-				time.Sleep(8 * time.Second)
+				time.Sleep(10 * time.Second)
 				fmt.Println("Sending done")
 				done <- true
-				expected := 4
+				expected := 6
 				actual := len(tradesQueue)
 				Expect(actual).To(Equal(expected))
 			})
 		})
 		Context("When that websocket is sending createMockConn stream of tradeRequests", func() {
 			It("Should correctly match the expected aggregate", func() {
-				a = twoTrades
-				printOutOfOrderTrades = true
+				outOfOrder = true
 				mockConn := mockAggService.InitializeWSConnection(tickerName)
-				go aggService.InitiateAggregateSequence(tickerName, 1*application.SecondsInMilliseconds, 2*application.SecondsInMilliseconds, mockConn, done)
-				time.Sleep(8 * time.Second)
-
-				time.Sleep(8 * time.Second)
+				go aggService.InitiateAggregateSequence(tickerName, 5*application.SecondsInMilliseconds, 10*application.SecondsInMilliseconds, mockConn, done)
+				time.Sleep(20 * time.Second)
 				fmt.Println("Sending done")
 				done <- true
 				expected := 0
