@@ -59,7 +59,7 @@ func (aggService *AggregateService) ProcessTradesChan(tickerName string, tickerD
 					tradesList = append(tradesList, incomingTradeList[i])
 					tradeProcessingLock.Unlock()
 				} else {
-					logrus.Debug("Found a trade that was outside of the rollingCurrentWindowTimestamp: %d\n", len(aggMap))
+					logrus.Debugf("Found a trade that was outside of the rollingCurrentWindowTimestamp: %d\n", len(aggMap))
 					if len(aggMap) != 0 {
 						aggMapLock.RLock()
 						logrus.Debug("Calling UpdatePastAgg due to len aggMap not equaling 0")

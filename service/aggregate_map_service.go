@@ -12,10 +12,10 @@ func UpdatePastAgg(aggMap map[aggregate.Duration]*aggregate.Aggregate, trade tra
 	logrus.Debugf("Current Timestamp Outside the bounds of what we can keep track of. Searching through %d aggMap size", len(aggMap))
 	for aggDuration, aggregate := range aggMap {
 		if aggDuration.Between(trade.Timestamp) {
-			logrus.Debugf("\tUpdating Agg with timeStamp: %d and Volume: %d", aggregate.Timestamp, aggregate.Volume)
-			logrus.Debugf("\tUpdating Agg with timeStamp: ", trade.Timestamp)
+			logrus.Debugf("\tUpdating Agg with timeStamp: %d and Volume: %d\n", aggregate.Timestamp, aggregate.Volume)
+			logrus.Debugf("\tUpdating Agg with timeStamp: %d\n", trade.Timestamp)
 			aggregate.Update(trade)
-			logrus.Debugf("\tPrinting Agg with timeStamp: %d and Volume: %d", trade.Timestamp, aggregate.Volume)
+			logrus.Debugf("\tPrinting Agg with timeStamp: %d and Volume: %d\n", trade.Timestamp, aggregate.Volume)
 			aggregate.Print()
 		}
 	}
@@ -50,7 +50,7 @@ func UpdateAggMap(tickerName string, tickerDuration time.Duration, rollingStartW
 	return rollingStartWindowTimestamp, rollingCurrentWindowTimestamp, tradesList
 }
 
-// PruneExpiredAggregates TODO: Might want to update this to a Cache instead. Purging the expired aggregates will be easier in te future
+// PruneExpiredAggregates FUTURE TODO: Before prod, want to update this to a Cache instead. Purging the expired aggregates will be easier in te future
 func PruneExpiredAggregates(aggMap map[aggregate.Duration]*aggregate.Aggregate, startTime int64) map[aggregate.Duration]*aggregate.Aggregate {
 	for aggDuration, aggregate := range aggMap {
 		if aggDuration.StartTime-startTime < 0 {

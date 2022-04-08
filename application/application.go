@@ -8,8 +8,8 @@ import (
 const (
 	//TODO: Before going to production, the following would want to be things we might want to grab from env variables/volume
 	webSocketUrl              = "wss://delayed.polygon.io/stocks"
-	aggregateTimeWindow       = 30 * SecondsInMilliseconds
-	aggregatePersistentWindow = 3600 * SecondsInMilliseconds
+	aggregateTimeWindow       = 1 * SecondsInMilliseconds
+	aggregatePersistentWindow = 2 * SecondsInMilliseconds
 
 	SecondsInMilliseconds = 1000000000
 )

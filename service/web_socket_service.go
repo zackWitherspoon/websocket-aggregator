@@ -10,7 +10,7 @@ import (
 
 const (
 	// APIKey TODO: Before going into production, we want this to be retrieved form environment or volume
-	APIKey = "JncA2_tG82oqnPqGQHyMj2BW_h2jCoQl"
+	APIKey = ""
 )
 
 type WebSocketClient interface {

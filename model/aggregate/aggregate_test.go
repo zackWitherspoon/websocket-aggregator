@@ -9,11 +9,11 @@ import (
 
 var _ = Describe("Aggregate Test", func() {
 	arrayOfTrades := []trade.TradeRequest{
-		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 123.45, Size: 21, Timestamp: 1536036818784},
-		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 111.23, Size: 11, Timestamp: 1536036818782},
-		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 145.10, Size: 4, Timestamp: 1536036818786},
-		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 90.26, Size: 25, Timestamp: 1536036818794},
-		trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 110.12, Size: 9, Timestamp: 1536036818799},
+		trade.TradeRequest{Symbol: "APPL", Price: 123.45, Size: 21, Timestamp: 1536036818784},
+		trade.TradeRequest{Symbol: "APPL", Price: 111.23, Size: 11, Timestamp: 1536036818782},
+		trade.TradeRequest{Symbol: "APPL", Price: 145.10, Size: 4, Timestamp: 1536036818786},
+		trade.TradeRequest{Symbol: "APPL", Price: 90.26, Size: 25, Timestamp: 1536036818794},
+		trade.TradeRequest{Symbol: "APPL", Price: 110.12, Size: 9, Timestamp: 1536036818799},
 	}
 	startTimestamp := int64(1536036818784)
 	var initialAggregate Aggregate
@@ -51,7 +51,7 @@ var _ = Describe("Aggregate Test", func() {
 			"AND the trade has an Opening time that is before the current opening Time", func() {
 			It("Should correctly update the aggregate", func() {
 
-				incomingPastTrade := trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 125, Size: 21, Timestamp: startTimestamp - 4}
+				incomingPastTrade := trade.TradeRequest{Symbol: "APPL", Price: 125, Size: 21, Timestamp: startTimestamp - 4}
 				expected := initialAggregate
 				expected.OpenPrice = incomingPastTrade.Price
 				expected.OpenPriceTimestamp = incomingPastTrade.Timestamp
@@ -64,7 +64,7 @@ var _ = Describe("Aggregate Test", func() {
 			"AND the trade has a closing time that is past the current Closing Time", func() {
 			It("Should correctly update the aggregate", func() {
 
-				incomingPastTrade := trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 125, Size: 21, Timestamp: startTimestamp + 3}
+				incomingPastTrade := trade.TradeRequest{Symbol: "APPL", Price: 125, Size: 21, Timestamp: startTimestamp + 3}
 				expected := initialAggregate
 				expected.ClosingPrice = incomingPastTrade.Price
 				expected.ClosingPriceTimestamp = incomingPastTrade.Timestamp
@@ -76,7 +76,7 @@ var _ = Describe("Aggregate Test", func() {
 		Context("When the aggregate that represents the timespan that this trade is between exists"+
 			"AND the trade has a high price than the high price", func() {
 			It("Should correctly update the aggregate", func() {
-				incomingPastTrade := trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 200.45, Size: 21, Timestamp: startTimestamp}
+				incomingPastTrade := trade.TradeRequest{Symbol: "APPL", Price: 200.45, Size: 21, Timestamp: startTimestamp}
 				expected := initialAggregate
 				expected.HighPrice = incomingPastTrade.Price
 				expected.Volume += incomingPastTrade.Size
@@ -87,7 +87,7 @@ var _ = Describe("Aggregate Test", func() {
 		Context("When the aggregate that represents the timespan that this trade is between exists"+
 			"AND the trade has a lower price than the low price", func() {
 			It("Should correctly update the aggregate", func() {
-				incomingPastTrade := trade.TradeRequest{Symbol: "APPL", TradeId: "12345", Price: 2, Size: 21, Timestamp: startTimestamp}
+				incomingPastTrade := trade.TradeRequest{Symbol: "APPL", Price: 2, Size: 21, Timestamp: startTimestamp}
 				expected := initialAggregate
 				expected.LowPrice = incomingPastTrade.Price
 				expected.Volume += incomingPastTrade.Size
