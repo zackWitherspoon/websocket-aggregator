@@ -46,3 +46,7 @@ ginkgo -r --cover
 // execute the following
 ./main TICKER_NAME_HERE 
 ````
+
+---
+
+[test]: test
