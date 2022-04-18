@@ -10,15 +10,15 @@ import (
 )
 
 type Aggregate struct {
-	Symbol                string  `json:"sym"`
-	OpenPrice             float64 `json:""`
+	Symbol                string
+	OpenPrice             float64
 	OpenPriceTimestamp    int64
-	ClosingPrice          float64 `json:""`
+	ClosingPrice          float64
 	ClosingPriceTimestamp int64
-	HighPrice             float64 `json:""`
-	LowPrice              float64 `json:""`
-	Volume                int     `json:"v"`
-	Timestamp             int64   `json:""`
+	HighPrice             float64
+	LowPrice              float64
+	Volume                int
+	Timestamp             int64
 	MutexLock             *sync.Mutex
 }
 

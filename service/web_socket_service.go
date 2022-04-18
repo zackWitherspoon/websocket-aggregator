@@ -32,6 +32,10 @@ func (tradeWS *TradeWebSocket) InitializeWSConnection(url string, tickerName str
 	}
 
 	err = wsConn.ReadJSON(&responseMessage)
+	if err != nil {
+		logrus.Fatalf("Unable to read the JSON from the connection to WebSocket. Please view the error, fix the code, and try agaian.\n"+
+			"error: %s \n", err)
+	}
 	responseMessage.DebugResponse()
 
 	//authenticate websocket
@@ -40,6 +44,10 @@ func (tradeWS *TradeWebSocket) InitializeWSConnection(url string, tickerName str
 		logrus.Fatal(authError)
 	}
 	err = wsConn.ReadJSON(&responseMessage)
+	if err != nil {
+		logrus.Fatalf("Unable to read the JSON from the connection to WebSocket. Please view the error, fix the code, and try agaian.\n"+
+			"error: %s \n", err)
+	}
 	responseMessage.DebugResponse()
 
 	//subscribe to websocket

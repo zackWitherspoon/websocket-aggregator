@@ -49,7 +49,7 @@ func UpdateAggMap(tickerName string, tickerDuration time.Duration, rollingStartW
 	return rollingStartWindowTimestamp, rollingCurrentWindowTimestamp
 }
 
-// PruneExpiredAggregates FUTURE TODO: Before prod, want to update this to a Cache instead. Purging the expired aggregates will be easier in te future
+// PruneExpiredAggregates FUTURE TODO: Before prod, want to update this to a Cache instead. Purging the expired aggregates will be easier in the future
 func PruneExpiredAggregates(aggMap map[aggregate.Duration]*aggregate.Aggregate, startTime int64) map[aggregate.Duration]*aggregate.Aggregate {
 	for aggDuration, aggregate := range aggMap {
 		if aggDuration.StartTime-startTime < 0 {
