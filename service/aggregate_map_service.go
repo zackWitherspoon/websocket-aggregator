@@ -22,7 +22,7 @@ func UpdatePastAgg(aggMap map[aggregate.Duration]*aggregate.Aggregate, trade tra
 	return aggMap
 }
 
-func UpdateAggMap(tickerName string, tickerDuration time.Duration, rollingStartWindowTimestamp int64, rollingCurrentWindowTimestamp int64, tradesList []trade.TradeRequest, aggMap map[aggregate.Duration]*aggregate.Aggregate, rollingTimeWindowEnabled bool, aggMapLock *sync.RWMutex) (int64, int64, []trade.TradeRequest) {
+func UpdateAggMap(tickerName string, tickerDuration time.Duration, rollingStartWindowTimestamp int64, rollingCurrentWindowTimestamp int64, tradesList []trade.TradeRequest, aggMap map[aggregate.Duration]*aggregate.Aggregate, rollingTimeWindowEnabled bool, aggMapLock *sync.RWMutex) (int64, int64) {
 
 	agg := aggregate.Calculate(tradesList, tickerName, rollingCurrentWindowTimestamp)
 	key := aggregate.Duration{}
@@ -46,8 +46,7 @@ func UpdateAggMap(tickerName string, tickerDuration time.Duration, rollingStartW
 	}
 	aggMap[key] = &agg
 	agg.Print()
-	tradesList = []trade.TradeRequest{}
-	return rollingStartWindowTimestamp, rollingCurrentWindowTimestamp, tradesList
+	return rollingStartWindowTimestamp, rollingCurrentWindowTimestamp
 }
 
 // PruneExpiredAggregates FUTURE TODO: Before prod, want to update this to a Cache instead. Purging the expired aggregates will be easier in te future

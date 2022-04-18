@@ -41,11 +41,10 @@ func (aggService *AggregateService) ProcessTradesChan(tickerName string, tickerD
 	for {
 		select {
 		case <-aggregateWindow.C:
-			tradeProcessingLock.Lock()
 			logrus.Debugf("rollingStartWindowTimestamp before: %d & rollingCurrentWindowTimestamp: %dn", rollingStartWindowTimestamp, rollingCurrentWindowTimestamp)
-			rollingStartWindowTimestamp, rollingCurrentWindowTimestamp, tradesList = UpdateAggMap(tickerName, tickerDuration, rollingStartWindowTimestamp, rollingCurrentWindowTimestamp, tradesList, aggMap, rollingTimeWindowEnabled, aggMapLock)
+			rollingStartWindowTimestamp, rollingCurrentWindowTimestamp = UpdateAggMap(tickerName, tickerDuration, rollingStartWindowTimestamp, rollingCurrentWindowTimestamp, tradesList, aggMap, rollingTimeWindowEnabled, aggMapLock)
+			tradesList = []trade.TradeRequest{}
 			logrus.Debugf("rollingStartWindowTimestamp after : %d & rollingCurrentWindowTimestamp :%d \n", rollingStartWindowTimestamp, rollingCurrentWindowTimestamp)
-			tradeProcessingLock.Unlock()
 		case incomingTradeList := <-tradesQueue:
 			for i := range incomingTradeList {
 				if rollingCurrentWindowTimestamp == 0 {
