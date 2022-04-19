@@ -27,7 +27,6 @@ func (aggService *AggregateService) InitiateAggregateSequence(tickerName string,
 }
 
 func (aggService *AggregateService) ProcessTradesChan(tickerName string, tickerDuration time.Duration, timeToKeepAggregates time.Duration, tradesQueue chan []trade.TradeRequest, testingInterruptChan chan bool) {
-
 	var tradesList []trade.TradeRequest
 	var aggMap = make(map[aggregate.Duration]*aggregate.Aggregate)
 	var rollingStartWindowTimestamp, rollingCurrentWindowTimestamp int64

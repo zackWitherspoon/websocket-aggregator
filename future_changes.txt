@@ -1,0 +1,7 @@
+X Change application to have own struct to better control different functionality.
+    - Can set some at run time through env vars or other means of runtime decision
+- Change aggMap to a cache service
+    - Will handle default expiration
+    - Might be concurrent Read/Write friendly
+- Change all timing to use Millisecond/Nanosecond. Swapping between all is confusing
+- Understand how to choose starting range better
