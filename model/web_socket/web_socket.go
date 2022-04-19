@@ -16,5 +16,5 @@ func (wsResponse *WebSocketResponse) DebugResponse() {
 	if err != nil {
 		logrus.Error(err)
 	}
-	logrus.Debug("Response: %s", marshalledResponse)
+	logrus.Debug("Response: %s", string(marshalledResponse))
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"polygon-websocket-aggregator/model/web_socket"
-	"time"
 )
 
 const (
@@ -14,15 +13,23 @@ const (
 )
 
 type WebSocketClient interface {
-	InitializeWSConnection(url string, ticker time.Ticker) *websocket.Conn
+	InitializeWSConnection(url string, tickerName string)
+	ReadMessage() (messageType int, p []byte, err error)
+	Close()
 }
 
-type TradeWebSocket struct{}
+type TradeWebSocket struct {
+	wsConn *websocket.Conn
+}
 
 var outgoingAuthenticationMessage = []byte(fmt.Sprintf("{\"action\":\"auth\",\"params\":\"%s\"}", APIKey))
-var outgoingSubscribeMessage = "{\"action\":\"subscribe\",\"params\":\"T.TSLA\"}"
+var outgoingSubscribeMessage = "{\"action\":\"subscribe\",\"params\":\"T.%s\"}"
 
-func (tradeWS *TradeWebSocket) InitializeWSConnection(url string, tickerName string) *websocket.Conn {
+func (tradeWS *TradeWebSocket) ReadMessage() (messageType int, p []byte, err error) {
+	return tradeWS.wsConn.ReadMessage()
+}
+
+func (tradeWS *TradeWebSocket) InitializeWSConnection(url string, tickerName string) {
 	var responseMessage web_socket.WebSocketResponse
 
 	logrus.Debug("Attempting to connect to websocket at url: " + url)
@@ -49,14 +56,17 @@ func (tradeWS *TradeWebSocket) InitializeWSConnection(url string, tickerName str
 			"error: %s \n", err)
 	}
 	responseMessage.DebugResponse()
-
 	//subscribe to websocket
-	var a = []byte(fmt.Sprint(outgoingSubscribeMessage, tickerName))
+	var a = []byte(fmt.Sprintf(outgoingSubscribeMessage, tickerName))
 	subscribeError := wsConn.WriteMessage(websocket.TextMessage, a)
 	err = wsConn.ReadJSON(&responseMessage)
 	if err != nil {
 		logrus.Fatal(subscribeError)
 	}
 	responseMessage.DebugResponse()
-	return wsConn
+	tradeWS.wsConn = wsConn
+}
+
+func (tradeWS *TradeWebSocket) Close() {
+	tradeWS.wsConn.Close()
 }

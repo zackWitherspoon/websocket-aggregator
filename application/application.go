@@ -6,18 +6,26 @@ import (
 	"time"
 )
 
-const (
-	//TODO: Before going to production, the following would want to be things we might want to grab from env variables/volume
-	webSocketUrl              = "wss://delayed.polygon.io/stocks"
-	aggregateTimeWindow       = 30 * time.Second
-	aggregatePersistentWindow = 3600 * time.Second
-)
+//TODO: Before going to production, the following would want to be things we might want to grab from env variables/volume
+const webSocketUrl = "wss://delayed.polygon.io/stocks"
 
-func Start(tickerName string, level logrus.Level) {
+type Application struct {
+	wsConn     service.WebSocketClient
+	aggService *service.AggregateService
+}
+
+func NewApplication(tickerName string, level logrus.Level) *Application {
 	logrus.SetLevel(level)
-	webSocket := service.TradeWebSocket{}
-	wsConn := webSocket.InitializeWSConnection(webSocketUrl, tickerName)
-	defer wsConn.Close()
-	aggService := service.AggregateService{}
-	aggService.InitiateAggregateSequence(tickerName, aggregateTimeWindow, aggregatePersistentWindow, wsConn, nil)
+	webSocket := &service.TradeWebSocket{}
+	webSocket.InitializeWSConnection(webSocketUrl, tickerName)
+	application := &Application{
+		wsConn:     webSocket,
+		aggService: &service.AggregateService{},
+	}
+
+	return application
+}
+
+func (Application *Application) Run(tickerName string, aggregateTimeWindow time.Duration, aggregatePersistentWindow time.Duration) {
+	Application.aggService.InitiateAggregateSequence(tickerName, aggregateTimeWindow, aggregatePersistentWindow, Application.wsConn, nil)
 }

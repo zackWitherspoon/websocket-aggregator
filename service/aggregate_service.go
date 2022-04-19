@@ -18,7 +18,7 @@ type AggregateServicer interface {
 }
 type AggregateService struct{}
 
-func (aggService *AggregateService) InitiateAggregateSequence(tickerName string, tickerDuration time.Duration, aggregateCacheTime time.Duration, wsConn *websocket.Conn, testingInterruptChan chan bool) {
+func (aggService *AggregateService) InitiateAggregateSequence(tickerName string, tickerDuration time.Duration, aggregateCacheTime time.Duration, wsConn WebSocketClient, testingInterruptChan chan bool) {
 	incomingByteChan := make(chan []byte, 10000)
 	tradesListChan := make(chan []trade.TradeRequest, 10000)
 
@@ -81,11 +81,12 @@ func (aggService *AggregateService) ProcessTradesChan(tickerName string, tickerD
 	}
 }
 
-func (aggService *AggregateService) AddIncomingBytesToBufferedChan(incomingByteChan chan []byte, wsConn *websocket.Conn) {
+func (aggService *AggregateService) AddIncomingBytesToBufferedChan(incomingByteChan chan []byte, wsConn WebSocketClient) {
 	logrus.Debug("Scanner from connection -> []byte running")
 	for {
 		var msg []byte
 		_, msg, err := wsConn.ReadMessage()
+		//println(msg)
 		if err != nil {
 			panic(err)
 		}
