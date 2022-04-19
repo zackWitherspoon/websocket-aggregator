@@ -18,7 +18,6 @@ func main() {
 	ticker := getTickerName()
 	app := application.NewApplication(ticker, logrus.InfoLevel)
 	app.Run(ticker, aggregateTimeWindow, aggregatePersistentWindow)
-
 }
 
 func getTickerName() string {

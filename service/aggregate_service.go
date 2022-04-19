@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"polygon-websocket-aggregator/model/aggregate"
 	"polygon-websocket-aggregator/model/trade"
@@ -11,10 +10,10 @@ import (
 )
 
 type AggregateServicer interface {
-	InitiateAggregateSequence(tickerName string, tickerDuration time.Duration, conn *websocket.Conn, testingInterruptChan chan bool)
+	InitiateAggregateSequence(tickerName string, tickerDuration time.Duration, aggregateCacheTime time.Duration, wsConn WebSocketClient, testingInterruptChan chan bool)
 	AddTradeObjectsToBufferedChan(trades chan []byte, tradesQueue chan []trade.TradeRequest, testingInterruptChan chan bool)
-	AddIncomingBytesToBufferedChan(trades chan []byte, conn *websocket.Conn)
-	ProcessTradesChan(tickerName string, tradesQueue chan []trade.TradeRequest, testingInterruptChan chan bool)
+	AddIncomingBytesToBufferedChan(incomingByteChan chan []byte, wsConn WebSocketClient)
+	ProcessTradesChan(tickerName string, tickerDuration time.Duration, timeToKeepAggregates time.Duration, tradesQueue chan []trade.TradeRequest, testingInterruptChan chan bool)
 }
 type AggregateService struct{}
 
@@ -86,7 +85,6 @@ func (aggService *AggregateService) AddIncomingBytesToBufferedChan(incomingByteC
 	for {
 		var msg []byte
 		_, msg, err := wsConn.ReadMessage()
-		//println(msg)
 		if err != nil {
 			panic(err)
 		}

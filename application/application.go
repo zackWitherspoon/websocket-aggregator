@@ -11,7 +11,7 @@ const webSocketUrl = "wss://delayed.polygon.io/stocks"
 
 type Application struct {
 	wsConn     service.WebSocketClient
-	aggService *service.AggregateService
+	aggService service.AggregateServicer
 }
 
 func NewApplication(tickerName string, level logrus.Level) *Application {
@@ -22,7 +22,6 @@ func NewApplication(tickerName string, level logrus.Level) *Application {
 		wsConn:     webSocket,
 		aggService: &service.AggregateService{},
 	}
-
 	return application
 }
 
