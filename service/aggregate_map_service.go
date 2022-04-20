@@ -10,13 +10,13 @@ import (
 
 func UpdatePastAgg(aggMap map[aggregate.Duration]*aggregate.Aggregate, trade trade.TradeRequest) map[aggregate.Duration]*aggregate.Aggregate {
 	logrus.Debugf("Current Timestamp Outside the bounds of what we can keep track of. Searching through %d aggMap size", len(aggMap))
-	for aggDuration, aggregate := range aggMap {
+	for aggDuration, agg := range aggMap {
 		if aggDuration.Between(trade.Timestamp) {
-			logrus.Debugf("\tUpdating Agg with timeStamp: %d and Volume: %d\n", aggregate.Timestamp, aggregate.Volume)
+			logrus.Debugf("\tUpdating Agg with timeStamp: %d and Volume: %d\n", agg.Timestamp, agg.Volume)
 			logrus.Debugf("\tUpdating Agg with timeStamp: %d\n", trade.Timestamp)
-			aggregate.Update(trade)
-			logrus.Debugf("\tPrinting Agg with timeStamp: %d and Volume: %d\n", trade.Timestamp, aggregate.Volume)
-			aggregate.Print()
+			agg.Update(trade)
+			logrus.Debugf("\tPrinting Agg with timeStamp: %d and Volume: %d\n", trade.Timestamp, agg.Volume)
+			agg.Print()
 		}
 	}
 	return aggMap
@@ -26,22 +26,23 @@ func UpdateAggMap(tickerName string, tickerDuration time.Duration, rollingStartW
 
 	agg := aggregate.Calculate(tradesList, tickerName, rollingCurrentWindowTimestamp)
 	key := aggregate.Duration{}
+	tickerDurationInMillisecond := tickerDuration.Milliseconds()
 	if len(aggMap) == 0 {
-		key.StartTime = agg.ClosingPriceTimestamp - tickerDuration.Milliseconds()
+		key.StartTime = agg.ClosingPriceTimestamp - tickerDurationInMillisecond
 		key.EndTime = agg.ClosingPriceTimestamp
-		rollingStartWindowTimestamp = agg.ClosingPriceTimestamp - tickerDuration.Milliseconds()
+		rollingStartWindowTimestamp = agg.ClosingPriceTimestamp - tickerDurationInMillisecond
 		rollingCurrentWindowTimestamp = agg.ClosingPriceTimestamp
 	} else {
 		key.StartTime = rollingCurrentWindowTimestamp
-		key.EndTime = rollingCurrentWindowTimestamp + tickerDuration.Milliseconds()
-		rollingCurrentWindowTimestamp = rollingCurrentWindowTimestamp + tickerDuration.Milliseconds()
+		key.EndTime = rollingCurrentWindowTimestamp + tickerDurationInMillisecond
+		rollingCurrentWindowTimestamp = rollingCurrentWindowTimestamp + tickerDurationInMillisecond
 		if rollingTimeWindowEnabled {
 			aggMapLock.RLock()
 			logrus.Debugf("Time to keep Aggregates has elipsed. There are currently %d items in the Aggregate Map\n", len(aggMap))
 			aggMap = PruneExpiredAggregates(aggMap, rollingStartWindowTimestamp)
 			logrus.Debugf("After pruning Aggregates, we are left with  %d items in the Aggregate Map\n", len(aggMap))
 			aggMapLock.RUnlock()
-			rollingStartWindowTimestamp += tickerDuration.Milliseconds()
+			rollingStartWindowTimestamp += tickerDurationInMillisecond
 		}
 	}
 	aggMap[key] = &agg
@@ -51,10 +52,10 @@ func UpdateAggMap(tickerName string, tickerDuration time.Duration, rollingStartW
 
 // PruneExpiredAggregates FUTURE TODO: Before prod, want to update this to a Cache instead. Purging the expired aggregates will be easier in the future
 func PruneExpiredAggregates(aggMap map[aggregate.Duration]*aggregate.Aggregate, startTime int64) map[aggregate.Duration]*aggregate.Aggregate {
-	for aggDuration, aggregate := range aggMap {
+	for aggDuration, agg := range aggMap {
 		if aggDuration.StartTime-startTime < 0 {
 			logrus.Debugf("\t\tPruning an Aggregate from the Map: ")
-			aggregate.DebugAggregate()
+			agg.DebugAggregate()
 			delete(aggMap, aggDuration)
 		}
 	}
