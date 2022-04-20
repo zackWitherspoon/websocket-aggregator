@@ -11,7 +11,7 @@ import (
 
 type AggregateServicer interface {
 	InitiateAggregateSequence(tickerName string, tickerDuration time.Duration, aggregateCacheTime time.Duration, wsConn WebSocketClient, testingInterruptChan chan bool)
-	AddTradeObjectsToBufferedChan(trades chan []byte, tradesQueue chan []trade.TradeRequest, testingInterruptChan chan bool)
+	AddTradeObjectsToBufferedChan(incomingByteChan chan []byte, tradesListChan chan []trade.TradeRequest, testingInterruptChan chan bool)
 	AddIncomingBytesToBufferedChan(incomingByteChan chan []byte, wsConn WebSocketClient)
 	ProcessTradesChan(tickerName string, tickerDuration time.Duration, timeToKeepAggregates time.Duration, tradesQueue chan []trade.TradeRequest, testingInterruptChan chan bool)
 }
@@ -74,6 +74,7 @@ func (aggService *AggregateService) ProcessTradesChan(tickerName string, tickerD
 			aggMapLock.RUnlock()
 			cacheEnabledTicker.Stop()
 		case <-testingInterruptChan:
+			aggregateWindow.Stop()
 			return
 		}
 	}

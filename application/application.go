@@ -16,8 +16,7 @@ type Application struct {
 
 func NewApplication(tickerName string, level logrus.Level) *Application {
 	logrus.SetLevel(level)
-	webSocket := &service.TradeWebSocket{}
-	webSocket.InitializeWSConnection(webSocketUrl, tickerName)
+	webSocket := service.InitializeWSConnection(webSocketUrl, tickerName)
 	application := &Application{
 		wsConn:     webSocket,
 		aggService: &service.AggregateService{},

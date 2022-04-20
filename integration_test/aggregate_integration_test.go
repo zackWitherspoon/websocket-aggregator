@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"polygon-websocket-aggregator/application"
 	"polygon-websocket-aggregator/model/trade"
 	"polygon-websocket-aggregator/service"
 	"strings"
@@ -18,12 +17,6 @@ import (
 )
 
 const tickerName = "TSLA"
-
-type mockWebService struct{}
-
-func (MWS mockWebService) InitializeWSConnection(string) *websocket.Conn {
-	return createMockConn()
-}
 
 var outOfOrder = false
 var upgrader = websocket.Upgrader{}
@@ -55,7 +48,8 @@ func writeTrades(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func createMockConn() *websocket.Conn {
+func createMockConn() service.WebSocketClient {
+	webSocket := service.TradeWebSocket{}
 	s := httptest.NewServer(http.HandlerFunc(writeTrades))
 	defer s.Close()
 
@@ -64,34 +58,33 @@ func createMockConn() *websocket.Conn {
 	println(u)
 	// Connect to the server
 	ws, _, _ := websocket.DefaultDialer.Dial(u, nil)
-	return ws
+	webSocket.SetWebsocket(ws)
+	return &webSocket
 }
 
 var (
-	trades         chan []byte
-	tradesQueue    chan []trade.TradeRequest
-	done           chan bool
-	mockAggService mockWebService
-	aggService     service.AggregateService
+	trades      chan []byte
+	tradesQueue chan []trade.TradeRequest
+	done        chan bool
+	aggService  service.AggregateService
 )
 
 var _ = Describe("Aggregate Test", func() {
 
+	webSocket := createMockConn()
+
 	BeforeEach(func() {
-		mockAggService = mockWebService{}
 		aggService = service.AggregateService{}
 		trades = make(chan []byte, 10000)
 		tradesQueue = make(chan []trade.TradeRequest, 10000)
 		done = make(chan bool)
-
 	})
 
 	Describe("Given createMockConn connection to createMockConn websocket", func() {
 		Context("When that websocket is sending createMockConn stream of tradeRequests", func() {
 			It("Should correctly match the expected aggregate", func() {
-				mockConn := mockAggService.InitializeWSConnection(tickerName)
 				go aggService.AddTradeObjectsToBufferedChan(trades, tradesQueue, done)
-				go aggService.AddIncomingBytesToBufferedChan(trades, mockConn)
+				go aggService.AddIncomingBytesToBufferedChan(trades, webSocket)
 				time.Sleep(10 * time.Second)
 				fmt.Println("Sending done")
 				done <- true
@@ -103,8 +96,8 @@ var _ = Describe("Aggregate Test", func() {
 		Context("When that websocket is sending createMockConn stream of tradeRequests", func() {
 			It("Should correctly match the expected aggregate", func() {
 				outOfOrder = true
-				mockConn := mockAggService.InitializeWSConnection(tickerName)
-				go aggService.InitiateAggregateSequence(tickerName, 5*application.SecondsInMilliseconds, 10*application.SecondsInMilliseconds, mockConn, done)
+				webSocket = createMockConn()
+				go aggService.InitiateAggregateSequence(tickerName, 5*time.Second, 10*time.Second, webSocket, done)
 				time.Sleep(20 * time.Second)
 				fmt.Println("Sending done")
 				done <- true

@@ -13,7 +13,7 @@ const (
 )
 
 type WebSocketClient interface {
-	InitializeWSConnection(url string, tickerName string)
+	SetWebsocket(conn *websocket.Conn)
 	ReadMessage() (messageType int, p []byte, err error)
 	Close()
 }
@@ -29,7 +29,12 @@ func (tradeWS *TradeWebSocket) ReadMessage() (messageType int, p []byte, err err
 	return tradeWS.wsConn.ReadMessage()
 }
 
-func (tradeWS *TradeWebSocket) InitializeWSConnection(url string, tickerName string) {
+func (tradeWs *TradeWebSocket) SetWebsocket(conn *websocket.Conn) {
+	tradeWs.wsConn = conn
+}
+
+func InitializeWSConnection(url string, tickerName string) WebSocketClient {
+	webSocket := TradeWebSocket{}
 	var responseMessage web_socket.WebSocketResponse
 
 	logrus.Debug("Attempting to connect to websocket at url: " + url)
@@ -64,7 +69,8 @@ func (tradeWS *TradeWebSocket) InitializeWSConnection(url string, tickerName str
 		logrus.Fatal(subscribeError)
 	}
 	responseMessage.DebugResponse()
-	tradeWS.wsConn = wsConn
+	webSocket.SetWebsocket(wsConn)
+	return &webSocket
 }
 
 func (tradeWS *TradeWebSocket) Close() {
